@@ -1,0 +1,1328 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Simulador de Trámites Académicos | ESAN</title>
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <style>
+    :root{
+      --esan-red:#E3173E;
+      --esan-red-dark:#AE0800;
+      --esan-gray:#696A6D;
+      --esan-gray-dark:#4E5054;
+      --esan-gray-light:#F4F4F5;
+      --esan-border:#E5E7EB;
+      --esan-blue-light:#B2DDEA;
+      --esan-green:#0F8B67;
+    }
+
+    *{ box-sizing:border-box; }
+
+    html{ scroll-behavior:smooth; }
+
+    body{
+      margin:0;
+      background:#fff;
+      color:var(--esan-gray-dark);
+      font-family:'Montserrat',sans-serif;
+    }
+
+    h1,h2,h3,h4,.font-serif{
+      font-family:'Montserrat',sans-serif !important;
+    }
+
+    input,select,textarea,button{
+      font-family:'Montserrat',sans-serif;
+    }
+
+    input,select,textarea{
+      font-size:16px;
+    }
+
+    .glass{
+      background:rgba(255,255,255,.96);
+      backdrop-filter:blur(10px);
+      border:1px solid var(--esan-border);
+    }
+
+    .sidebar-red{ background:var(--esan-red); }
+
+    .menu-btn{
+      width:100%;
+      display:flex;
+      align-items:center;
+      gap:.75rem;
+      padding:.85rem 1rem;
+      color:#fff;
+      text-align:left;
+      transition:.2s ease;
+      border-left:4px solid transparent;
+    }
+
+    .menu-btn:hover{ background:rgba(255,255,255,.12); }
+
+    .menu-btn.active-tab{
+      background:var(--esan-red-dark);
+      font-weight:700;
+      border-left-color:#fff;
+    }
+
+    .menu-btn.disabled{
+      opacity:.55;
+      cursor:not-allowed;
+    }
+
+    .field-label{
+      display:block;
+      font-size:.82rem;
+      font-weight:700;
+      color:#374151;
+      margin-bottom:.5rem;
+    }
+
+    .field{
+      width:100%;
+      border:1px solid #D1D5DB;
+      background:#fff;
+      color:#111827;
+      border-radius:.85rem;
+      padding:.8rem .95rem;
+      outline:none;
+      transition:.2s ease;
+    }
+
+    .field:focus{
+      border-color:var(--esan-red);
+      box-shadow:0 0 0 3px rgba(227,23,62,.12);
+    }
+
+    .field-error{
+      border-color:#DC2626 !important;
+      box-shadow:0 0 0 3px rgba(220,38,38,.08) !important;
+    }
+
+    .helper{
+      margin-top:.45rem;
+      font-size:.75rem;
+      line-height:1.45;
+      color:#6B7280;
+    }
+
+    .error-text{
+      margin-top:.4rem;
+      font-size:.75rem;
+      color:#DC2626;
+      font-weight:600;
+    }
+
+    .portal-card{
+      position:relative;
+      overflow:hidden;
+      background:#fff;
+      border:1px solid var(--esan-border);
+      border-radius:1.25rem;
+      padding:1.4rem;
+      transition:.25s ease;
+      text-align:left;
+      min-height:190px;
+    }
+
+    .portal-card.active-card{
+      cursor:pointer;
+      border-left:4px solid var(--esan-red);
+    }
+
+    .portal-card.active-card:hover{
+      transform:translateY(-3px);
+      box-shadow:0 14px 30px rgba(17,24,39,.09);
+      border-color:#F3A4B4;
+    }
+
+    .portal-card.disabled-card{
+      background:#F9FAFB;
+      opacity:.72;
+      cursor:not-allowed;
+    }
+
+    .icon-box{
+      width:48px;
+      height:48px;
+      border-radius:14px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      background:#FDEBEC;
+      color:var(--esan-red);
+    }
+
+    .status-pill{
+      display:inline-flex;
+      align-items:center;
+      gap:.35rem;
+      padding:.35rem .7rem;
+      border-radius:999px;
+      font-size:.7rem;
+      font-weight:700;
+      letter-spacing:.02em;
+    }
+
+    .result-enter{
+      animation:resultIn .35s ease both;
+    }
+
+    @keyframes resultIn{
+      from{ opacity:0; transform:translateY(8px); }
+      to{ opacity:1; transform:translateY(0); }
+    }
+
+    .amount{
+      font-size:clamp(2.5rem,6vw,4.4rem);
+      font-weight:800;
+      color:var(--esan-red);
+      line-height:1;
+    }
+
+    .step-dot{
+      width:30px;
+      height:30px;
+      border-radius:50%;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      background:var(--esan-red);
+      color:#fff;
+      font-size:.78rem;
+      font-weight:800;
+      flex-shrink:0;
+    }
+
+    ::-webkit-scrollbar{ width:6px; background:#F4F4F5; }
+    ::-webkit-scrollbar-thumb{ background:#D1D5DB; border-radius:4px; }
+
+    @media(max-width:768px){
+      h1{ font-size:1.8rem !important; }
+      h2{ font-size:1.5rem !important; }
+      h3{ font-size:1.08rem !important; }
+      .glass{ padding:1rem !important; }
+    }
+  </style>
+</head>
+
+<body class="min-h-screen flex flex-col md:flex-row bg-white overflow-x-hidden" id="app">
+
+  <!-- FONDO OSCURO DEL MENÚ MÓVIL -->
+  <div id="mobileBackdrop"
+       class="fixed inset-0 bg-black/40 z-40 hidden md:hidden"
+       onclick="toggleMenu(false)"></div>
+
+  <!-- SIDEBAR -->
+  <aside id="sidebar"
+         class="fixed md:relative inset-y-0 left-0 z-50 w-72 sidebar-red flex flex-col
+                transform -translate-x-full md:translate-x-0 transition-transform duration-300 shadow-2xl md:shadow-none">
+
+    <div class="p-6 border-b border-white/20 flex items-center gap-3 cursor-pointer" onclick="renderContent('home')">
+      <div class="w-11 h-11 bg-white rounded-xl flex items-center justify-center text-xl font-extrabold text-[var(--esan-red)]">
+        UE
+      </div>
+      <div>
+        <h1 class="text-white text-base leading-tight font-extrabold">ESAN UNIVERSITY</h1>
+        <p class="text-[10px] text-white/80 uppercase tracking-widest mt-1">Trámites académicos</p>
+      </div>
+    </div>
+
+    <div class="flex-1 overflow-y-auto py-3" id="menu-container"></div>
+
+    <div class="p-4 text-center text-[11px] text-white/75 border-t border-white/20 leading-relaxed">
+      Herramienta de orientación académica
+    </div>
+  </aside>
+
+  <!-- CONTENIDO PRINCIPAL -->
+  <main class="flex-1 min-w-0 bg-[var(--esan-gray-light)] flex flex-col min-h-screen">
+
+    <!-- TOP BAR -->
+    <div class="h-16 border-b border-gray-200 flex items-center px-4 sm:px-6 gap-4 bg-white/95 backdrop-blur z-30 sticky top-0">
+      <button onclick="toggleMenu()" class="md:hidden text-gray-700 p-2 rounded-lg hover:bg-gray-100" aria-label="Abrir menú">
+        <i data-lucide="menu"></i>
+      </button>
+
+      <div class="flex items-center gap-3 min-w-0">
+        <div class="hidden sm:flex w-9 h-9 rounded-xl bg-red-50 items-center justify-center">
+          <i data-lucide="graduation-cap" class="w-5 h-5 text-[var(--esan-red)]"></i>
+        </div>
+        <div class="min-w-0">
+          <p class="text-xs text-gray-500">Universidad ESAN</p>
+          <p id="topTitle" class="text-sm font-bold text-gray-900 truncate">Simulador de Trámites Académicos</p>
+        </div>
+      </div>
+    </div>
+
+    <div id="viewer" class="flex-1 overflow-y-auto p-4 sm:p-6 md:p-10 w-full"></div>
+  </main>
+
+<script>
+/* ============================================================
+   CONFIGURACIÓN GENERAL
+   ============================================================ */
+
+/* ------------------------------------------------------------
+   1) CICLOS DISPONIBLES EN LOS DESPLEGABLES
+
+   AHORA:
+   - Primer ciclo visible: 2026-2
+   - Último ciclo visible: 2050-1
+
+   PARA ELIMINAR CICLOS ANTIGUOS EN EL FUTURO:
+   cambia solamente CICLO_INICIAL.
+
+   Ejemplo:
+   const CICLO_INICIAL = "2028-1";
+
+   PARA AMPLIAR EL ÚLTIMO AÑO:
+   cambia CICLO_FINAL.
+
+   Ejemplo:
+   const CICLO_FINAL = "2055-1";
+
+   SI QUIERES OCULTAR UN CICLO ESPECÍFICO SIN CAMBIAR EL RANGO:
+   agrégalo en CICLOS_OCULTOS.
+
+   Ejemplo:
+   const CICLOS_OCULTOS = ["2027-2", "2028-1"];
+   ------------------------------------------------------------ */
+const CICLO_INICIAL = "2026-2";
+const CICLO_FINAL   = "2050-1";
+const CICLOS_OCULTOS = [];
+
+
+/* ------------------------------------------------------------
+   2) CONEXIÓN CON GOOGLE APPS SCRIPT
+
+   Cuando publiques tu Apps Script como Web App, pega aquí la URL.
+
+   Ejemplo:
+   const APPS_SCRIPT_URL =
+   "https://script.google.com/macros/s/XXXXXXXXXXXX/exec";
+
+   IMPORTANTE:
+   Esta página NO usa localStorage y NO guarda los datos del
+   formulario en GitHub. Los datos se mantienen en el navegador
+   mientras se usa la página y, cuando el alumno confirma,
+   se envían al Web App que configures aquí.
+   ------------------------------------------------------------ */
+const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyBJcdrlsSiuZaT4GLbpA2_PS_qsu-GSFlyRQbyyoc_CZFXjZhOSDuLOi0m4xhDHs5L/exec";
+
+
+/* ------------------------------------------------------------
+   3) CARRERAS DE PREGRADO
+   Si en el futuro se agrega, elimina o cambia el nombre de una
+   carrera, modifica únicamente esta lista.
+   ------------------------------------------------------------ */
+const CARRERAS = [
+  "Administración",
+  "Administración y Finanzas",
+  "Administración y Marketing",
+  "Administración y Negocios Internacionales",
+  "Comunicación Empresarial y Marketing Digital",
+  "Contabilidad",
+  "Economía",
+  "Economía y Negocios Internacionales",
+  "Economía y Finanzas",
+  "Ingeniería Industrial y Comercial",
+  "Ingeniería de Tecnologías de Información y Sistemas",
+  "Ingeniería de Software",
+  "Ingeniería en Ciencia de Datos",
+  "Ingeniería Ambiental",
+  "Ingeniería en Inteligencia Artificial",
+  "Psicología",
+  "Derecho Corporativo",
+  "Derecho"
+];
+
+
+/* ============================================================
+   BASE DE CONTENIDOS
+   ============================================================ */
+const db = {
+  home: {
+    title: "Simulador de Trámites Académicos",
+    icon: "home",
+    menu: "Inicio",
+    html: `
+      <div class="max-w-6xl mx-auto animate-[fadeIn_0.4s]">
+
+        <section class="relative overflow-hidden rounded-3xl bg-white border border-gray-200 shadow-sm mb-8">
+          <div class="absolute -right-24 -top-24 w-72 h-72 rounded-full bg-red-100/70"></div>
+          <div class="absolute -right-6 -bottom-16 w-48 h-48 rounded-full bg-gray-100"></div>
+
+          <div class="relative p-7 sm:p-10 md:p-12">
+            <span class="status-pill bg-red-50 text-[var(--esan-red)] mb-5">
+              <i data-lucide="sparkles" class="w-4 h-4"></i>
+              Herramienta de orientación
+            </span>
+
+            <h2 class="text-3xl md:text-5xl text-gray-900 font-extrabold max-w-3xl leading-tight">
+              Simulador de Trámites Académicos
+            </h2>
+
+            <p class="text-gray-600 mt-5 max-w-3xl leading-relaxed">
+              Selecciona el trámite que deseas consultar. El simulador te brindará una orientación
+              de acuerdo con la información que registres.
+            </p>
+
+            <div class="mt-7 flex flex-wrap gap-3 text-sm text-gray-600">
+              <span class="inline-flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-full px-4 py-2">
+                <i data-lucide="shield-check" class="w-4 h-4 text-[var(--esan-red)]"></i>
+                Validación de datos
+              </span>
+              <span class="inline-flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-full px-4 py-2">
+                <i data-lucide="calculator" class="w-4 h-4 text-[var(--esan-red)]"></i>
+                Resultado automático
+              </span>
+              <span class="inline-flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-full px-4 py-2">
+                <i data-lucide="mail" class="w-4 h-4 text-[var(--esan-red)]"></i>
+                Información por correo
+              </span>
+            </div>
+          </div>
+        </section>
+
+        <div class="mb-5">
+          <p class="text-xs uppercase tracking-[.2em] text-[var(--esan-red)] font-bold">Trámites disponibles</p>
+          <h3 class="text-2xl font-extrabold text-gray-900 mt-1">¿Qué deseas consultar?</h3>
+        </div>
+
+        <div class="grid sm:grid-cols-2 xl:grid-cols-3 gap-5">
+
+          <button class="portal-card active-card" onclick="renderContent('retorno')">
+            <div class="flex justify-between items-start gap-4">
+              <div class="icon-box">
+                <i data-lucide="rotate-ccw" class="w-6 h-6"></i>
+              </div>
+              <span class="status-pill bg-green-50 text-green-700">Disponible</span>
+            </div>
+            <h4 class="text-lg font-extrabold text-gray-900 mt-6">Reserva o reincorporación</h4>
+            <p class="text-sm text-gray-500 mt-2 leading-relaxed">
+              Identifica el trámite que corresponde, los ciclos sin estudiar y el monto referencial.
+            </p>
+            <div class="mt-5 inline-flex items-center gap-2 text-sm font-bold text-[var(--esan-red)]">
+              Iniciar simulación
+              <i data-lucide="arrow-right" class="w-4 h-4"></i>
+            </div>
+          </button>
+
+          <button class="portal-card active-card" onclick="renderContent('retiroCurso')">
+            <div class="flex justify-between items-start gap-4">
+              <div class="icon-box">
+                <i data-lucide="book-x" class="w-6 h-6"></i>
+              </div>
+              <span class="status-pill bg-amber-50 text-amber-700">En preparación</span>
+            </div>
+            <h4 class="text-lg font-extrabold text-gray-900 mt-6">Retiro de curso</h4>
+            <p class="text-sm text-gray-500 mt-2 leading-relaxed">
+              Consulta las principales condiciones académicas vinculadas al retiro de una asignatura.
+            </p>
+            <div class="mt-5 inline-flex items-center gap-2 text-sm font-bold text-[var(--esan-red)]">
+              Ver información
+              <i data-lucide="arrow-right" class="w-4 h-4"></i>
+            </div>
+          </button>
+
+          ${["Trámite 1","Trámite 2","Trámite 3","Trámite 4"].map((t,i)=>`
+            <div class="portal-card disabled-card">
+              <div class="flex justify-between items-start gap-4">
+                <div class="icon-box bg-gray-100 text-gray-400">
+                  <i data-lucide="${["file-clock","clipboard","files","layout-list"][i]}" class="w-6 h-6"></i>
+                </div>
+                <span class="status-pill bg-gray-100 text-gray-500">Próximamente</span>
+              </div>
+              <h4 class="text-lg font-extrabold text-gray-700 mt-6">${t}</h4>
+              <p class="text-sm text-gray-400 mt-2 leading-relaxed">
+                Este trámite podrá incorporarse posteriormente al simulador.
+              </p>
+            </div>
+          `).join("")}
+
+        </div>
+
+        <div class="mt-8 glass rounded-2xl p-5 flex items-start gap-4">
+          <div class="w-10 h-10 rounded-xl bg-gray-100 flex items-center justify-center shrink-0">
+            <i data-lucide="info" class="w-5 h-5 text-gray-500"></i>
+          </div>
+          <p class="text-sm text-gray-600 leading-relaxed">
+            Los resultados brindados por esta herramienta son de carácter orientativo y están sujetos
+            a la validación de la Universidad según la situación académica y administrativa del estudiante.
+          </p>
+        </div>
+
+      </div>
+    `
+  },
+
+  retorno: {
+    title: "Reserva o reincorporación",
+    icon: "rotate-ccw",
+    menu: "Reserva o reincorporación",
+    html: `
+      <div class="max-w-6xl mx-auto">
+
+        <div class="glass rounded-2xl p-6 sm:p-7 border-l-4 border-[var(--esan-red)] mb-6">
+          <div class="flex flex-col sm:flex-row sm:items-center gap-4">
+            <div class="w-14 h-14 rounded-2xl bg-[var(--esan-red)] flex items-center justify-center shrink-0">
+              <i data-lucide="rotate-ccw" class="w-7 h-7 text-white"></i>
+            </div>
+            <div>
+              <p class="text-xs uppercase tracking-[.2em] text-[var(--esan-red)] font-bold">Simulador</p>
+              <h2 class="text-2xl sm:text-3xl font-extrabold text-gray-900 mt-1">Reserva o reincorporación</h2>
+              <p class="text-sm text-gray-500 mt-2">
+                Completa tus datos y te indicaremos la orientación correspondiente al ciclo en el que deseas retomar tus estudios.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div class="grid lg:grid-cols-[1.15fr_.85fr] gap-6 items-start">
+
+          <!-- FORMULARIO -->
+          <section class="glass rounded-2xl p-6 sm:p-8">
+            <div class="flex items-center gap-3 mb-7">
+              <div class="step-dot">1</div>
+              <div>
+                <h3 class="text-lg font-extrabold text-gray-900">Datos del estudiante</h3>
+                <p class="text-xs text-gray-500 mt-1">Todos los campos son obligatorios.</p>
+              </div>
+            </div>
+
+            <form id="retornoForm" novalidate class="space-y-5" onsubmit="event.preventDefault(); calcularRetorno();">
+
+              <div class="grid sm:grid-cols-2 gap-5">
+                <div>
+                  <label class="field-label" for="apellidos">Apellidos completos</label>
+                  <input id="apellidos" name="apellidos" type="text" class="field"
+                         placeholder="APELLIDOS COMPLETOS"
+                         autocomplete="family-name">
+                  <p id="err-apellidos" class="error-text hidden"></p>
+                </div>
+
+                <div>
+                  <label class="field-label" for="nombres">Nombres completos</label>
+                  <input id="nombres" name="nombres" type="text" class="field"
+                         placeholder="NOMBRES COMPLETOS"
+                         autocomplete="given-name">
+                  <p id="err-nombres" class="error-text hidden"></p>
+                </div>
+              </div>
+
+              <div class="grid sm:grid-cols-2 gap-5">
+                <div>
+                  <label class="field-label" for="codigo">Código de estudiante</label>
+                  <input id="codigo" name="codigo" type="text" inputmode="numeric"
+                         maxlength="8" class="field" placeholder="12345678"
+                         autocomplete="off">
+                  <p class="helper">Debe contener exactamente 8 dígitos.</p>
+                  <p id="err-codigo" class="error-text hidden"></p>
+                </div>
+
+                <div>
+                  <label class="field-label" for="correo">Correo electrónico</label>
+                  <input id="correo" name="correo" type="email" class="field"
+                         placeholder="nombre@correo.com" autocomplete="email">
+                  <p class="helper">La información del resultado será enviada a este correo.</p>
+                  <p id="err-correo" class="error-text hidden"></p>
+                </div>
+              </div>
+
+              <div>
+                <label class="field-label" for="carrera">Carrera</label>
+                <select id="carrera" name="carrera" class="field">
+                  <option value="">Seleccione su carrera</option>
+                </select>
+                <p id="err-carrera" class="error-text hidden"></p>
+              </div>
+
+              <div class="border-t border-gray-200 pt-6">
+                <div class="flex items-center gap-3 mb-5">
+                  <div class="step-dot">2</div>
+                  <div>
+                    <h3 class="text-lg font-extrabold text-gray-900">Información académica</h3>
+                    <p class="text-xs text-gray-500 mt-1">El ciclo de retorno debe ser posterior a tu último ciclo de estudios.</p>
+                  </div>
+                </div>
+
+                <div class="grid sm:grid-cols-2 gap-5">
+                  <div>
+                    <label class="field-label" for="ultimoCiclo">Último ciclo de estudios</label>
+                    <select id="ultimoCiclo" name="ultimoCiclo" class="field">
+                      <option value="">Seleccione un ciclo</option>
+                    </select>
+                    <p class="helper">
+                      Indica el último ciclo en el que estuviste matriculado(a). Puede ser un ciclo que culminaste
+                      o el ciclo en el que realizaste tu retiro de semestre.
+                    </p>
+                    <p id="err-ultimoCiclo" class="error-text hidden"></p>
+                  </div>
+
+                  <div>
+                    <label class="field-label" for="cicloRetorno">Ciclo en el que deseas iniciar nuevamente tus estudios</label>
+                    <select id="cicloRetorno" name="cicloRetorno" class="field">
+                      <option value="">Seleccione un ciclo</option>
+                    </select>
+                    <p class="helper">
+                      No se considera como ciclo suspendido el semestre en el que retomas tus estudios.
+                    </p>
+                    <p id="err-cicloRetorno" class="error-text hidden"></p>
+                  </div>
+                </div>
+              </div>
+
+              <label class="flex items-start gap-3 bg-gray-50 border border-gray-200 rounded-xl p-4 cursor-pointer">
+                <input id="confirmacion" type="checkbox" class="mt-1 accent-red-600">
+                <span class="text-sm text-gray-600 leading-relaxed">
+                  Confirmo que la información ingresada es correcta y deseo conocer la orientación correspondiente a mi caso.
+                </span>
+              </label>
+              <p id="err-confirmacion" class="error-text hidden"></p>
+
+              <button type="submit"
+                      class="w-full sm:w-auto inline-flex justify-center items-center gap-2 px-7 py-3.5 rounded-xl
+                             bg-[var(--esan-red)] hover:bg-[var(--esan-red-dark)] text-white font-bold transition shadow-lg">
+                <i data-lucide="calculator" class="w-5 h-5"></i>
+                Calcular mi trámite
+              </button>
+
+            </form>
+          </section>
+
+
+          <!-- PANEL LATERAL -->
+          <aside class="space-y-5">
+
+            <div class="rounded-2xl overflow-hidden shadow-sm">
+              <div class="bg-gradient-to-br from-[var(--esan-red)] to-[var(--esan-red-dark)] p-6 text-white">
+                <div class="w-12 h-12 rounded-xl bg-white/15 flex items-center justify-center mb-5">
+                  <i data-lucide="calendar-range" class="w-6 h-6"></i>
+                </div>
+                <h3 class="text-xl font-extrabold">¿Cómo se cuentan los ciclos?</h3>
+                <p class="text-sm text-white/85 mt-3 leading-relaxed">
+                  Se cuentan únicamente los semestres regulares que transcurren entre tu último ciclo de estudios
+                  y el ciclo en el que regresarás.
+                </p>
+                <div class="mt-5 rounded-xl bg-white/12 p-4">
+                  <p class="text-xs uppercase tracking-wider text-white/70 font-bold">Ejemplo</p>
+                  <p class="text-sm mt-2 leading-relaxed">
+                    Último ciclo: <strong>2027-1</strong><br>
+                    Retorno: <strong>2029-1</strong><br>
+                    Ciclos sin estudiar: <strong>2027-2, 2028-1 y 2028-2</strong>.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div class="glass rounded-2xl p-6">
+              <div class="flex items-center gap-3 mb-4">
+                <i data-lucide="scale" class="w-5 h-5 text-[var(--esan-red)]"></i>
+                <h3 class="font-extrabold text-gray-900">Consideraciones</h3>
+              </div>
+
+              <div class="space-y-4 text-sm text-gray-600 leading-relaxed">
+                <div class="flex gap-3">
+                  <span class="w-7 h-7 rounded-lg bg-red-50 text-[var(--esan-red)] flex items-center justify-center font-bold shrink-0">1</span>
+                  <p>La reserva de matrícula contempla uno o dos semestres académicos ordinarios.</p>
+                </div>
+                <div class="flex gap-3">
+                  <span class="w-7 h-7 rounded-lg bg-red-50 text-[var(--esan-red)] flex items-center justify-center font-bold shrink-0">2</span>
+                  <p>Si el periodo sin estudios supera los dos semestres, el simulador orientará el caso hacia reincorporación.</p>
+                </div>
+                <div class="flex gap-3">
+                  <span class="w-7 h-7 rounded-lg bg-red-50 text-[var(--esan-red)] flex items-center justify-center font-bold shrink-0">3</span>
+                  <p>Los casos con seis o más semestres consecutivos sin matrícula requieren una evaluación especial según el Reglamento de Estudios.</p>
+                </div>
+              </div>
+            </div>
+
+          </aside>
+        </div>
+
+        <!-- RESULTADO -->
+        <section id="resultadoRetorno" class="hidden mt-7"></section>
+
+      </div>
+    `
+  },
+
+  retiroCurso: {
+    title: "Retiro de curso",
+    icon: "book-x",
+    menu: "Retiro de curso",
+    html: `
+      <div class="max-w-5xl mx-auto">
+        <div class="glass rounded-2xl p-7 border-l-4 border-[var(--esan-red)]">
+          <div class="flex items-start gap-4">
+            <div class="w-14 h-14 rounded-2xl bg-[var(--esan-red)] flex items-center justify-center shrink-0">
+              <i data-lucide="book-x" class="w-7 h-7 text-white"></i>
+            </div>
+            <div>
+              <span class="status-pill bg-amber-50 text-amber-700 mb-3">Simulador en preparación</span>
+              <h2 class="text-3xl font-extrabold text-gray-900">Retiro de curso</h2>
+              <p class="text-gray-600 mt-3 leading-relaxed">
+                Esta sección será configurada en el siguiente paso. Por ahora se muestran algunas condiciones
+                generales establecidas en el Reglamento de Estudios de Pregrado.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div class="grid md:grid-cols-3 gap-5 mt-6">
+          <div class="glass rounded-2xl p-6">
+            <i data-lucide="calendar-clock" class="w-7 h-7 text-[var(--esan-red)]"></i>
+            <h3 class="font-extrabold text-gray-900 mt-4">Plazo ordinario</h3>
+            <p class="text-sm text-gray-600 mt-2 leading-relaxed">
+              El retiro puede solicitarse desde el inicio de clases y, como regla general, hasta el viernes
+              a las 12:00 del mediodía de la décima semana de actividades.
+            </p>
+          </div>
+
+          <div class="glass rounded-2xl p-6">
+            <i data-lucide="library-big" class="w-7 h-7 text-[var(--esan-red)]"></i>
+            <h3 class="font-extrabold text-gray-900 mt-4">Créditos restantes</h3>
+            <p class="text-sm text-gray-600 mt-2 leading-relaxed">
+              Luego del retiro, la carga académica restante no debe ser inferior a 12 créditos,
+              salvo las situaciones que correspondan según la normativa.
+            </p>
+          </div>
+
+          <div class="glass rounded-2xl p-6">
+            <i data-lucide="receipt-text" class="w-7 h-7 text-[var(--esan-red)]"></i>
+            <h3 class="font-extrabold text-gray-900 mt-4">Efecto económico</h3>
+            <p class="text-sm text-gray-600 mt-2 leading-relaxed">
+              El retiro ordinario tiene efectos académicos y no modifica los pagos asumidos
+              ni genera devolución de los importes cancelados.
+            </p>
+          </div>
+        </div>
+
+        <div class="mt-6 bg-white border border-gray-200 rounded-2xl p-6 flex gap-4">
+          <div class="w-11 h-11 rounded-xl bg-red-50 flex items-center justify-center shrink-0">
+            <i data-lucide="triangle-alert" class="w-5 h-5 text-[var(--esan-red)]"></i>
+          </div>
+          <div>
+            <h3 class="font-extrabold text-gray-900">Casos especiales</h3>
+            <p class="text-sm text-gray-600 mt-2 leading-relaxed">
+              Las solicitudes sustentadas en causas graves o situaciones extraordinarias pueden estar sujetas
+              a evaluación individual. Esta sección se incorporará cuando definamos la lógica completa del simulador.
+            </p>
+          </div>
+        </div>
+      </div>
+    `
+  }
+};
+
+
+/* ============================================================
+   MENÚ Y NAVEGACIÓN
+   ============================================================ */
+function buildMenu(){
+  const container = document.getElementById("menu-container");
+
+  const mainItems = [
+    ["home","home","Inicio"],
+    ["retorno","rotate-ccw","Reserva o reincorporación"],
+    ["retiroCurso","book-x","Retiro de curso"]
+  ];
+
+  const futureItems = [
+    ["file-clock","Trámite 1"],
+    ["clipboard","Trámite 2"],
+    ["files","Trámite 3"],
+    ["layout-list","Trámite 4"]
+  ];
+
+  container.innerHTML = `
+    <div class="px-4 pb-2 pt-1 text-[10px] uppercase tracking-[.2em] text-white/65 font-bold">Principal</div>
+
+    ${mainItems.map(([key,icon,label]) => `
+      <button id="menu-${key}" class="menu-btn" onclick="renderContent('${key}')">
+        <i data-lucide="${icon}" class="w-5 h-5 shrink-0"></i>
+        <span class="text-sm">${label}</span>
+      </button>
+    `).join("")}
+
+    <div class="px-4 pb-2 pt-6 text-[10px] uppercase tracking-[.2em] text-white/65 font-bold">Próximamente</div>
+
+    ${futureItems.map(([icon,label]) => `
+      <button class="menu-btn disabled" type="button" disabled>
+        <i data-lucide="${icon}" class="w-5 h-5 shrink-0"></i>
+        <span class="text-sm">${label}</span>
+      </button>
+    `).join("")}
+  `;
+}
+
+function renderContent(key){
+  const item = db[key];
+  if(!item) return;
+
+  document.getElementById("viewer").innerHTML = item.html;
+  document.getElementById("topTitle").textContent = item.title;
+
+  document.querySelectorAll(".menu-btn").forEach(btn => btn.classList.remove("active-tab"));
+  const active = document.getElementById(`menu-${key}`);
+  if(active) active.classList.add("active-tab");
+
+  toggleMenu(false);
+
+  if(key === "retorno"){
+    prepararFormularioRetorno();
+  }
+
+  lucide.createIcons();
+  document.getElementById("viewer").scrollTop = 0;
+}
+
+function toggleMenu(force){
+  const sidebar = document.getElementById("sidebar");
+  const backdrop = document.getElementById("mobileBackdrop");
+
+  let open;
+  if(typeof force === "boolean"){
+    open = force;
+  } else {
+    open = sidebar.classList.contains("-translate-x-full");
+  }
+
+  if(open){
+    sidebar.classList.remove("-translate-x-full");
+    backdrop.classList.remove("hidden");
+  }else{
+    sidebar.classList.add("-translate-x-full");
+    backdrop.classList.add("hidden");
+  }
+}
+
+
+/* ============================================================
+   CICLOS
+   ============================================================ */
+function cicloToIndex(ciclo){
+  const [anio, periodo] = ciclo.split("-").map(Number);
+  return (anio * 2) + (periodo === 2 ? 1 : 0);
+}
+
+function indexToCiclo(index){
+  const anio = Math.floor(index / 2);
+  const periodo = index % 2 === 0 ? 1 : 2;
+  return `${anio}-${periodo}`;
+}
+
+function generarCiclos(){
+  const inicio = cicloToIndex(CICLO_INICIAL);
+  const fin = cicloToIndex(CICLO_FINAL);
+  const ciclos = [];
+
+  for(let i = inicio; i <= fin; i++){
+    const ciclo = indexToCiclo(i);
+    if(!CICLOS_OCULTOS.includes(ciclo)){
+      ciclos.push(ciclo);
+    }
+  }
+  return ciclos;
+}
+
+function calcularCiclosSuspendidos(ultimo, retorno){
+  const diferencia = cicloToIndex(retorno) - cicloToIndex(ultimo);
+
+  // El ciclo de retorno NO se cuenta como suspendido.
+  // Ejemplo: último 2027-1 y retorno 2027-2 => 0 ciclos suspendidos.
+  return diferencia - 1;
+}
+
+function obtenerCiclosIntermedios(ultimo, retorno){
+  const inicio = cicloToIndex(ultimo) + 1;
+  const fin = cicloToIndex(retorno) - 1;
+  const lista = [];
+
+  for(let i = inicio; i <= fin; i++){
+    lista.push(indexToCiclo(i));
+  }
+  return lista;
+}
+
+
+/* ============================================================
+   LÓGICA DEL MONTO
+   ============================================================ */
+function calcularMonto(ciclosSuspendidos){
+  if(ciclosSuspendidos <= 0) return 0;
+
+  // REGLA DEFINIDA:
+  // 1-2 ciclos  = S/ 300
+  // 3-4 ciclos  = S/ 600
+  // 5-6 ciclos  = S/ 900
+  // 7-8 ciclos  = S/ 1,200
+  // 9-10 ciclos = S/ 1,500
+  // y continúa con el mismo patrón.
+  return 300 * Math.ceil(ciclosSuspendidos / 2);
+}
+
+function determinarSituacion(ciclosSuspendidos){
+  if(ciclosSuspendidos === 0){
+    return {
+      tipo:"retorno",
+      titulo:"Retorno al ciclo siguiente",
+      subtitulo:"No se registran ciclos académicos intermedios sin estudiar.",
+      icon:"circle-check",
+      badge:"Sin pago por reserva",
+      badgeClass:"bg-green-50 text-green-700"
+    };
+  }
+
+  if(ciclosSuspendidos <= 2){
+    return {
+      tipo:"reserva",
+      titulo:"Reserva de matrícula",
+      subtitulo:"El periodo sin estudios se encuentra dentro del rango de uno o dos semestres académicos.",
+      icon:"calendar-check",
+      badge:"Reserva",
+      badgeClass:"bg-blue-50 text-blue-700"
+    };
+  }
+
+  if(ciclosSuspendidos < 6){
+    return {
+      tipo:"reincorporacion",
+      titulo:"Reincorporación",
+      subtitulo:"De acuerdo con la regla de orientación definida para este simulador, corresponde iniciar el trámite de reincorporación.",
+      icon:"rotate-ccw",
+      badge:"Reincorporación",
+      badgeClass:"bg-red-50 text-[var(--esan-red)]"
+    };
+  }
+
+  return {
+    tipo:"reincorporacion_especial",
+    titulo:"Reincorporación sujeta a evaluación",
+    subtitulo:"Se registran seis o más semestres académicos consecutivos sin matrícula. El caso requiere evaluación conforme al Reglamento de Estudios.",
+    icon:"triangle-alert",
+    badge:"Evaluación especial",
+    badgeClass:"bg-amber-50 text-amber-700"
+  };
+}
+
+
+/* ============================================================
+   FORMULARIO
+   ============================================================ */
+function prepararFormularioRetorno(){
+  const carrera = document.getElementById("carrera");
+  const ultimo = document.getElementById("ultimoCiclo");
+  const retorno = document.getElementById("cicloRetorno");
+  const ciclos = generarCiclos();
+
+  CARRERAS.forEach(nombre => {
+    const option = document.createElement("option");
+    option.value = nombre;
+    option.textContent = nombre;
+    carrera.appendChild(option);
+  });
+
+  ciclos.forEach(ciclo => {
+    const op1 = document.createElement("option");
+    op1.value = ciclo;
+    op1.textContent = ciclo;
+    ultimo.appendChild(op1);
+
+    const op2 = document.createElement("option");
+    op2.value = ciclo;
+    op2.textContent = ciclo;
+    retorno.appendChild(op2);
+  });
+
+  const apellidos = document.getElementById("apellidos");
+  const nombres = document.getElementById("nombres");
+  const codigo = document.getElementById("codigo");
+
+  [apellidos,nombres].forEach(input => {
+    input.addEventListener("input", () => {
+      input.value = input.value.toLocaleUpperCase("es-PE");
+      ocultarResultadoSiExiste();
+    });
+  });
+
+  codigo.addEventListener("input", () => {
+    codigo.value = codigo.value.replace(/\D/g,"").slice(0,8);
+    ocultarResultadoSiExiste();
+  });
+
+  document.querySelectorAll("#retornoForm input, #retornoForm select").forEach(el => {
+    el.addEventListener("change", ocultarResultadoSiExiste);
+  });
+}
+
+function ocultarResultadoSiExiste(){
+  const box = document.getElementById("resultadoRetorno");
+  if(box && !box.classList.contains("hidden")){
+    box.classList.add("hidden");
+    box.innerHTML = "";
+  }
+}
+
+function limpiarErrores(){
+  document.querySelectorAll(".error-text").forEach(el => {
+    el.classList.add("hidden");
+    el.textContent = "";
+  });
+
+  document.querySelectorAll(".field").forEach(el => el.classList.remove("field-error"));
+}
+
+function marcarError(id, mensaje){
+  const field = document.getElementById(id);
+  const error = document.getElementById(`err-${id}`);
+
+  if(field) field.classList.add("field-error");
+  if(error){
+    error.textContent = mensaje;
+    error.classList.remove("hidden");
+  }
+}
+
+function validarFormulario(){
+  limpiarErrores();
+
+  const datos = {
+    apellidos: document.getElementById("apellidos").value.trim(),
+    nombres: document.getElementById("nombres").value.trim(),
+    codigo: document.getElementById("codigo").value.trim(),
+    correo: document.getElementById("correo").value.trim(),
+    carrera: document.getElementById("carrera").value,
+    ultimoCiclo: document.getElementById("ultimoCiclo").value,
+    cicloRetorno: document.getElementById("cicloRetorno").value,
+    confirmacion: document.getElementById("confirmacion").checked
+  };
+
+  let ok = true;
+
+  if(datos.apellidos.length < 2){
+    marcarError("apellidos","Ingresa tus apellidos completos.");
+    ok = false;
+  }
+
+  if(datos.nombres.length < 2){
+    marcarError("nombres","Ingresa tus nombres completos.");
+    ok = false;
+  }
+
+  if(!/^\d{8}$/.test(datos.codigo)){
+    marcarError("codigo","El código debe contener exactamente 8 dígitos.");
+    ok = false;
+  }
+
+  if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(datos.correo)){
+    marcarError("correo","Ingresa un correo electrónico válido.");
+    ok = false;
+  }
+
+  if(!datos.carrera){
+    marcarError("carrera","Selecciona tu carrera.");
+    ok = false;
+  }
+
+  if(!datos.ultimoCiclo){
+    marcarError("ultimoCiclo","Selecciona tu último ciclo de estudios.");
+    ok = false;
+  }
+
+  if(!datos.cicloRetorno){
+    marcarError("cicloRetorno","Selecciona el ciclo en el que deseas retomar tus estudios.");
+    ok = false;
+  }
+
+  if(datos.ultimoCiclo && datos.cicloRetorno){
+    const diff = cicloToIndex(datos.cicloRetorno) - cicloToIndex(datos.ultimoCiclo);
+
+    if(diff <= 0){
+      marcarError("cicloRetorno","El ciclo de retorno debe ser posterior a tu último ciclo de estudios.");
+      ok = false;
+    }
+  }
+
+  if(!datos.confirmacion){
+    const e = document.getElementById("err-confirmacion");
+    e.textContent = "Debes confirmar que la información ingresada es correcta.";
+    e.classList.remove("hidden");
+    ok = false;
+  }
+
+  return {ok, datos};
+}
+
+
+/* ============================================================
+   RESULTADO DE RESERVA / REINCORPORACIÓN
+   ============================================================ */
+let ultimoResultado = null;
+
+function calcularRetorno(){
+  const {ok, datos} = validarFormulario();
+  if(!ok) return;
+
+  const ciclosSuspendidos = calcularCiclosSuspendidos(datos.ultimoCiclo, datos.cicloRetorno);
+  const ciclosIntermedios = obtenerCiclosIntermedios(datos.ultimoCiclo, datos.cicloRetorno);
+  const monto = calcularMonto(ciclosSuspendidos);
+  const situacion = determinarSituacion(ciclosSuspendidos);
+
+  ultimoResultado = {
+    ...datos,
+    ciclosSuspendidos,
+    ciclosIntermedios,
+    monto,
+    situacion: situacion.tipo,
+    tramite: situacion.titulo,
+    fechaRegistro: new Date().toISOString()
+  };
+
+  mostrarResultado(ultimoResultado, situacion);
+}
+
+function formatoMonto(monto){
+  return new Intl.NumberFormat("es-PE",{
+    style:"currency",
+    currency:"PEN",
+    minimumFractionDigits:2
+  }).format(monto);
+}
+
+function mostrarResultado(datos, situacion){
+  const box = document.getElementById("resultadoRetorno");
+
+  const ciclosTexto = datos.ciclosIntermedios.length
+    ? datos.ciclosIntermedios.join(", ")
+    : "Ninguno";
+
+  let avisoEspecial = "";
+
+  if(datos.situacion === "reserva"){
+    avisoEspecial = `
+      <div class="mt-5 bg-blue-50 border border-blue-100 rounded-xl p-4 flex gap-3">
+        <i data-lucide="info" class="w-5 h-5 text-blue-600 shrink-0 mt-0.5"></i>
+        <p class="text-sm text-blue-900 leading-relaxed">
+          El Reglamento de Estudios señala que la reserva de matrícula faculta al alumno a no seguir
+          estudios durante uno o dos semestres académicos ordinarios y establece un máximo de dos semestres
+          de reserva durante su permanencia, salvo la excepción prevista por la propia norma.
+        </p>
+      </div>
+    `;
+  }
+
+  if(datos.situacion === "reincorporacion_especial"){
+    avisoEspecial = `
+      <div class="mt-5 bg-amber-50 border border-amber-200 rounded-xl p-4 flex gap-3">
+        <i data-lucide="triangle-alert" class="w-5 h-5 text-amber-700 shrink-0 mt-0.5"></i>
+        <p class="text-sm text-amber-900 leading-relaxed">
+          El Reglamento de Estudios establece que seis semestres académicos consecutivos sin matrícula
+          pueden generar pérdida de la condición de alumno por abandono. La reincorporación en ese supuesto
+          es excepcional y está sujeta a evaluación.
+        </p>
+      </div>
+    `;
+  }
+
+  const esReincorporacion =
+    datos.situacion === "reincorporacion" ||
+    datos.situacion === "reincorporacion_especial";
+
+  const botonPrincipal = esReincorporacion
+    ? `
+      <button id="btnEnviarResultado"
+              onclick="enviarAlSistema('solicitud_reincorporacion')"
+              class="inline-flex justify-center items-center gap-2 px-6 py-3.5 rounded-xl
+                     bg-[var(--esan-red)] hover:bg-[var(--esan-red-dark)] text-white font-bold transition shadow-md">
+        <i data-lucide="send" class="w-5 h-5"></i>
+        Solicitar reincorporación aquí
+      </button>
+      <p class="text-xs text-gray-500 mt-3">
+        Al enviar la solicitud, la información del trámite y el monto calculado serán remitidos al correo registrado.
+      </p>
+    `
+    : `
+      <button id="btnEnviarResultado"
+              onclick="enviarAlSistema('enviar_resultado')"
+              class="inline-flex justify-center items-center gap-2 px-6 py-3.5 rounded-xl
+                     bg-[var(--esan-red)] hover:bg-[var(--esan-red-dark)] text-white font-bold transition shadow-md">
+        <i data-lucide="mail" class="w-5 h-5"></i>
+        Enviar información a mi correo
+      </button>
+      <p class="text-xs text-gray-500 mt-3">
+        Recibirás en el correo registrado la información correspondiente a este resultado.
+      </p>
+    `;
+
+  box.innerHTML = `
+    <div class="result-enter rounded-3xl overflow-hidden shadow-lg border border-gray-200 bg-white">
+
+      <div class="bg-gradient-to-r from-[var(--esan-red)] to-[var(--esan-red-dark)] px-6 sm:px-8 py-7 text-white">
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-5">
+          <div class="flex items-center gap-4">
+            <div class="w-14 h-14 rounded-2xl bg-white/15 flex items-center justify-center shrink-0">
+              <i data-lucide="${situacion.icon}" class="w-7 h-7"></i>
+            </div>
+            <div>
+              <p class="text-xs uppercase tracking-[.18em] text-white/75 font-bold">Resultado de la simulación</p>
+              <h3 class="text-2xl sm:text-3xl font-extrabold mt-1">${situacion.titulo}</h3>
+              <p class="text-sm text-white/85 mt-2">${situacion.subtitulo}</p>
+            </div>
+          </div>
+
+          <span class="status-pill bg-white/15 text-white self-start">
+            ${situacion.badge}
+          </span>
+        </div>
+      </div>
+
+      <div class="p-6 sm:p-8">
+
+        <div class="grid md:grid-cols-2 gap-7">
+          <div>
+            <p class="text-xs uppercase tracking-[.16em] text-gray-400 font-bold">Monto calculado</p>
+            <div class="amount mt-3">${formatoMonto(datos.monto)}</div>
+            <p class="text-sm text-gray-500 mt-3 leading-relaxed">
+              Monto obtenido según el número de ciclos académicos suspendidos registrado en esta simulación.
+            </p>
+          </div>
+
+          <div class="bg-gray-50 rounded-2xl p-5 border border-gray-200">
+            <div class="grid grid-cols-2 gap-4">
+              <div>
+                <p class="text-xs text-gray-400">Último ciclo</p>
+                <p class="font-extrabold text-gray-900 mt-1">${datos.ultimoCiclo}</p>
+              </div>
+              <div>
+                <p class="text-xs text-gray-400">Ciclo de retorno</p>
+                <p class="font-extrabold text-gray-900 mt-1">${datos.cicloRetorno}</p>
+              </div>
+              <div>
+                <p class="text-xs text-gray-400">Ciclos suspendidos</p>
+                <p class="font-extrabold text-[var(--esan-red)] mt-1 text-xl">${datos.ciclosSuspendidos}</p>
+              </div>
+              <div>
+                <p class="text-xs text-gray-400">Código</p>
+                <p class="font-extrabold text-gray-900 mt-1">${datos.codigo}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="mt-6 border-t border-gray-200 pt-6">
+          <p class="text-xs uppercase tracking-[.16em] text-gray-400 font-bold">Ciclos en los que no registras estudios</p>
+          <p class="text-sm text-gray-700 mt-2 leading-relaxed">${ciclosTexto}</p>
+        </div>
+
+        ${avisoEspecial}
+
+        <div class="mt-6 bg-gray-50 border border-gray-200 rounded-xl p-4">
+          <p class="text-sm text-gray-600 leading-relaxed">
+            <strong>${datos.nombres} ${datos.apellidos}</strong>, este resultado es una orientación generada
+            a partir de los datos ingresados. La procedencia definitiva del trámite está sujeta a la validación
+            académica y administrativa correspondiente.
+          </p>
+        </div>
+
+        <div class="mt-6">
+          ${botonPrincipal}
+          <p id="estadoEnvio" class="text-sm font-semibold mt-4 hidden"></p>
+        </div>
+
+      </div>
+    </div>
+  `;
+
+  box.classList.remove("hidden");
+  lucide.createIcons();
+
+  setTimeout(() => {
+    box.scrollIntoView({behavior:"smooth", block:"start"});
+  }, 80);
+}
+
+
+/* ============================================================
+   ENVÍO A GOOGLE APPS SCRIPT
+   ============================================================ */
+async function enviarAlSistema(accion){
+  const estado = document.getElementById("estadoEnvio");
+  const boton = document.getElementById("btnEnviarResultado");
+
+  if(!ultimoResultado) return;
+
+  if(!APPS_SCRIPT_URL){
+    estado.textContent = "La conexión con Google Apps Script todavía no ha sido configurada.";
+    estado.className = "text-sm font-semibold mt-4 text-amber-700";
+    estado.classList.remove("hidden");
+    return;
+  }
+
+  const payload = {
+    accion,
+    apellidos: ultimoResultado.apellidos,
+    nombres: ultimoResultado.nombres,
+    codigo: ultimoResultado.codigo,
+    correo: ultimoResultado.correo,
+    carrera: ultimoResultado.carrera,
+    ultimoCiclo: ultimoResultado.ultimoCiclo,
+    cicloRetorno: ultimoResultado.cicloRetorno,
+    ciclosSuspendidos: String(ultimoResultado.ciclosSuspendidos),
+    ciclosSinEstudiar: ultimoResultado.ciclosIntermedios.join(", "),
+    tramite: ultimoResultado.tramite,
+    situacion: ultimoResultado.situacion,
+    monto: String(ultimoResultado.monto),
+    fechaRegistro: ultimoResultado.fechaRegistro
+  };
+
+  boton.disabled = true;
+  boton.classList.add("opacity-60","cursor-wait");
+  estado.textContent = "Enviando información...";
+  estado.className = "text-sm font-semibold mt-4 text-gray-600";
+  estado.classList.remove("hidden");
+
+  try{
+    await fetch(APPS_SCRIPT_URL,{
+      method:"POST",
+      mode:"no-cors",
+      headers:{
+        "Content-Type":"application/x-www-form-urlencoded;charset=UTF-8"
+      },
+      body:new URLSearchParams(payload).toString()
+    });
+
+    if(accion === "solicitud_reincorporacion"){
+      estado.textContent = "Tu solicitud fue enviada. Revisa el correo registrado para recibir la información del trámite.";
+    }else{
+      estado.textContent = "La información fue enviada. Revisa el correo electrónico registrado.";
+    }
+
+    estado.className = "text-sm font-semibold mt-4 text-green-700";
+  }catch(error){
+    console.error(error);
+    estado.textContent = "No se pudo enviar la información. Intenta nuevamente o comunícate con la Universidad.";
+    estado.className = "text-sm font-semibold mt-4 text-red-600";
+    boton.disabled = false;
+    boton.classList.remove("opacity-60","cursor-wait");
+  }
+}
+
+
+/* ============================================================
+   INICIO
+   ============================================================ */
+buildMenu();
+renderContent("home");
+</script>
+
+</body>
+</html>
